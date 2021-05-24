@@ -1,5 +1,7 @@
 ---
 title: "Lab: The 12 Days of Christmas"
+author: "Kevin Cooke, Thomas Andrews, Amie Boyle, Rachael Ryan, Elijah Balderas"
+date: "5/13/2021"
 output:
   prettydoc::html_pretty:
     theme: tactile
@@ -95,11 +97,7 @@ Try your function out on the gifts in the dataset.
 make things simpler!)
 
 ```{r}
-
-pluralize_gift(xmas$Gift.Item)
-
 purrr::map_chr(xmas$Gift.Item, pluralize_gift)
-
 ```
 
 
@@ -139,27 +137,26 @@ make_phrase <- function(num, num_word, item, verb, adjective, location) {
   ## Single items starting with a vowel should have "an" in front
   ## All other single items should have "a" in front
   
-  vowel_start <- str_sub(item, 1, 1) %>% 
-    str_detect(item, "[aeiou]")
+  vowel_start <- str_sub(item, 1, 1) %>% str_detect("[aeiou]")
   
   if (num > 1) {
     item <- pluralize_gift(item)
   } 
   
   else if (vowel_start) {
-    item <- glue::glue("An {item}")
+    item <- glue::glue("an {item}")
     return(glue::glue("{adjective} {item} {verb} {location}") %>%
     str_squish())
-  } 
+  }
   
   else {
-    item <- glue::glue("An {item}")
+    item <- glue::glue("a {item}")
     return(glue::glue("{adjective} {item} {verb} {location}") %>%
     str_squish())
-    }
+  }
   
-  return(glue::glue("{num_word} {adjective} {item} {verb} {location}")) %>%
-    str_squish()
+  return(glue::glue("{num_word} {adjective} {item} {verb} {location}") %>%
+    str_squish())
 }
 ```
 
@@ -174,7 +171,7 @@ to say `"twelve"` **not** `"twelfth"`. I suggest using the **english** package
 to create numbered days and then use those in your `pmap_chr()`!
 
 ```{r}
-xmas %>%
+xmas <- xmas %>%
   mutate(day.num = english(Day)) %>%
   mutate(day.num = as.character(day.num)) %>%
   mutate(Full.Phrase = pmap_chr(list(num = Day,
@@ -184,7 +181,9 @@ xmas %>%
                                 adjective = Adjective,
                                 location = Location), 
                            make_phrase)
-  ) %>%
+  ) 
+
+xmas %>%
   select(Full.Phrase) %>%
   print()
 ```
@@ -210,29 +209,76 @@ Write a function called `sing_line` that takes as input:
 # Arguments -- phrase_col -- The variable name for the column in the dataset that contains the gift phrases
 # Return -- A string singing the line of the song with all gifts for the given day.
 
-sing_day <- function(dataset, line, phrase_col){
+sing_line <- function(dataset, line, phrase_col){
   
   # Step 1: Setup the intro line
   
-  num_word <- ____
+  num_word <- english::ordinal(line) 
   
-  intro <- glue::glue("On the {num_word} day of Christmas")
+  intro <- glue::glue("On the {num_word} day of Christmas my true love gave to me,")
   
   # Step 2: Sing the gift phrases
 
     phrases <- dataset %>% 
-      pull({{phrase_col}})
+      pull({{phrase_col}}) 
 
-  ????
-    
   ## put it together
-    
-  ????
 
-
+ print(intro)
+  
+  if(line > 1){
+    lyrics <- map_chr(line:2, print(glue::glue("{phrases[line:2]}")))
+    print("\nand {phrases[1]}")
+    # lyrics1 <- map_chr(line:2, print(glue::glue("{phrases[line:2]}")))
+    #lyrics2 <- map_chr(1, print(glue::glue("\nand {phrases[1]}")))
+    #lyrics <- glue::glue("{lyrics1} {lyrics2}")
+  } else{
+    lyrics <- map_chr(line, print(glue::glue("{phrases[1]}")))
+  }
+  return(lyrics)
+          
 }
+#print(intro)
+# if(line != 1){
+# map_chr(line:2, return(str_glue("{phrases[line:2]}")))
+# }
+#else{
+#  return(phrases[1])
+#}
 
+#print(intro)
+#if(line == 1){
+# map_chr(line:1, return(glue::glue("{phrases[1]}")))
+# } 
+# else{
+#map_chr(line:2, return(glue::glue("{phrases[line:2]} \nand {phrases[1]}")))
+#}
 
+#print(intro)
+ # map_chr(line:1, 
+        # if(line == 1){
+       #  (return(str_glue(phrases[1])))
+        #    }
+         # else {
+           # (return(str_glue("{phrases[line:2]}, \nand {phrases[1]}")))
+           # }
+         #  )
+  
+  #lyrics1 <- map_chr(line:2, print(glue::glue("{phrases[line:2]}")))
+  #lyrics2 <- map_chr(1, print(glue::glue("\nand {phrases[1]}")))
+   #return(glue::glue("{intro} {lyrics1} {lyrics2}"))
+
+# print(intro)
+#  map_chr(line:1, 
+         # if(line == 1){
+        # (yay<-(str_glue(phrases[1])))
+         #   }
+         # else {
+         #(yee<-(str_glue("{phrases[line:2]}, \nand {phrases[1]}")))
+        #    }
+        #   )
+  #  return(str_glue("{yee} {yay}") %>%
+  #  str_squish())
 ```
 
 For example,
@@ -240,9 +286,8 @@ For example,
 
 ```{r}
 sing_line(xmas, 
-          num = 2, 
+          line = 5, 
           phrase_col = Full.Phrase)
-
 ```
 
 should return
@@ -279,7 +324,6 @@ xmas2 <- xmas %>%
 map_chr(1:12, ~sing_line(xmas2, .x, Full.Phrase)) %>%
   str_c(collapse = "\n") %>%
   cat()
-
 ```
 
 
