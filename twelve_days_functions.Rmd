@@ -15,6 +15,7 @@ library(dplyr)
 library(glue)
 library(stringr)
 library(purrr)
+library(english)
 ```
 
 
@@ -46,13 +47,25 @@ the function takes a gift and returns the appropriate plural.
 
 pluralize_gift <- function(gift){
 
-gift <- gift %>%
-  str_replace()
-
+  if(str_detect(gift, "y")){
+    gift = str_replace(gift, "y", "ies")
+  }
+    
+  else if(str_detect(gift, "oo")){
+    gift = str_replace(gift, "oo", "ee")
+  } 
+  
+  else{
+    gift = str_c(gift, "s", sep = "")
+  }
+  
 return(gift)
 
 }
+
+map_chr(xmas$Gift.Item, pluralize_gift)
 ```
+
 
 *Hint 1:* Note that the gifts on days six and nine have unusual pluralizations.
 You may assume that in other datasets, there will be no special cases besides
@@ -118,32 +131,35 @@ make_phrase <- function(num, num_word, item, verb, adjective, location) {
   
   ## Step 1: Replace NAs with blank strings
   verb <- str_replace_na(verb, "")
+  adjective <- str_replace_na(adjective, "")
+  location <- str_replace_na(location, "")
   
   ## Step 2: Pluralize the gift if needed
   ## Items with numbers larger than 1 should be pluralized
   ## Single items starting with a vowel should have "an" in front
   ## All other single items should have "a" in front
   
-  vowel_start <- str_sub(item, 1, 1) %>% str_detect(___)
+  vowel_start <- str_sub(item, 1, 1) %>% 
+    str_detect(item, "[aeiou]")
   
-  if (___) {
-    
+  if (num > 1) {
     item <- pluralize_gift(item)
-    
-  } else if (vowel_start) {
+  } 
   
-      
-    
-  } else {
-    
-    
-    
-  }
+  else if (vowel_start) {
+    item <- glue::glue("An {item}")
+    return(glue::glue("{adjective} {item} {verb} {location}") %>%
+    str_squish())
+  } 
   
-  glue::glue("{num_word} {adjective} {item} {verb} {location}") %>%
+  else {
+    item <- glue::glue("An {item}")
+    return(glue::glue("{adjective} {item} {verb} {location}") %>%
+    str_squish())
+    }
+  
+  return(glue::glue("{num_word} {adjective} {item} {verb} {location}")) %>%
     str_squish()
-  
-  
 }
 ```
 
@@ -158,11 +174,19 @@ to say `"twelve"` **not** `"twelfth"`. I suggest using the **english** package
 to create numbered days and then use those in your `pmap_chr()`!
 
 ```{r}
-xmas <- xmas %>%
-  mutate(
-    Full.Phrase = pmap_chr(list(___), 
+xmas %>%
+  mutate(day.num = english(Day)) %>%
+  mutate(day.num = as.character(day.num)) %>%
+  mutate(Full.Phrase = pmap_chr(list(num = Day,
+                                num_word = day.num,
+                                item = Gift.Item,
+                                verb = Verb,
+                                adjective = Adjective,
+                                location = Location), 
                            make_phrase)
-  )
+  ) %>%
+  select(Full.Phrase) %>%
+  print()
 ```
 
 
